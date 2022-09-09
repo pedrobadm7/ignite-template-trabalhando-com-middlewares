@@ -10,19 +10,81 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers;
+
+  const user = users.find((user) => user.username === username)
+
+  if (!user) {
+    return response.status(404).json({error: 'User not found'});
+  }
+
+  request.user = user;
+
+  return next();
 }
 
+
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { user } = request;
+
+  if (!user.pro && user.todos.length < 10) {
+    return next();
+  }
+
+  if (user.pro) {
+    return next();
+  }
+
+  return response.status(403).json({error: 'Please, you need to get premium to create more todos'})
+}
+
+function isValidUUID(string) {
+  const regex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
+
+  return regex.test(string);
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers;
+  const { id } = request.params;
+
+  const user = users.find((user) => user.username === username);
+  console.log({username})
+
+  if (!user) {
+    return response.status(404).json({ error: 'User not found!' })
+  }
+
+  const todo = user.todos.find((todo) => todo.id === id);
+
+  if (!isValidUUID(id)) {
+    return response.status(400).json({ error: "ID it's not a valid UUID" })
+  }
+
+  if (!todo) {
+    return response.status(404).json({ error: "This ID do not belong any to do" })
+  }
+
+  request.todo = todo;
+  request.user = user;
+  return next();
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params;
+
+  const user = users.find((user) => user.id === id);
+
+  if (!user) {
+    return response.status(404).json({ error: 'User not found!' })
+  }
+
+  if (!isValidUUID(id)) {
+    return response.status(400).json({ error: "ID it's not a valid UUID" })
+  }
+
+  request.user = user;
+  return next();
 }
 
 app.post('/users', (request, response) => {
